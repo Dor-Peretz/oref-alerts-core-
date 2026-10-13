@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:oref-alerts:schema:v1",
+  "title": "oref-alerts-core schema 1.0.0",
+  "description": "Versioned documents emitted by oref-alerts-core. schemaVersion on each instance is 1.0.0. This file is the contract; numeric Oref category codes are normalized before they appear here.",
+  "$defs": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "missiles",
+        "aircraft",
+        "earthquake",
+        "tsunami",
+        "radiological",
+        "hazardous-materials",
+        "terrorist-infiltration",
+        "nonconventional",
+        "general",
+        "informational",
+        "pre-alert",
+        "all-clear",
+        "drill",
+        "unknown"
+      ]
+    },
+    "messagePhase": {
+      "type": "string",
+      "enum": ["none", "pre-alert", "active", "ended"],
+      "description": "Phase of one upstream message. none does not move an area lifecycle."
+    },
+    "lifecyclePhase": {
+      "type": "string",
+      "enum": ["idle", "pre-alert", "active", "ended"]
+    },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["he", "en"],
+      "properties": {
+        "he": { "type": "string" },
+        "en": { "type": ["string", "null"], "description": "Null when this project has no verified English wording for the Hebrew text." }
+      }
+    },
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lat", "lng"],
+      "properties": {
+        "lat": { "type": "number" },
+        "lng": { "type": "number" }
+      }
+    },
+    "districtRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "names"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^district:" },
+        "names": { "$ref": "#/$defs/localized" }
+      }
+    },
+    "areaRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rawName", "match", "names", "district", "shelterTimeSeconds", "location"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "city:{sourceId} when the Hebrew name matches the catalog, otherwise unmapped:{12 hex chars}."
+        },
+        "rawName": { "type": "string" },
+        "match": { "type": "string", "enum": ["exact", "unmapped"] },
+        "names": { "$ref": "#/$defs/localized" },
+        "district": { "anyOf": [{ "$ref": "#/$defs/districtRef" }, { "type": "null" }] },
+        "shelterTimeSeconds": { "type": ["integer", "null"], "minimum": 0 },
+        "location": { "anyOf": [{ "$ref": "#/$defs/point" }, { "type": "null" }] }
+      }
+    },
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "id",
+        "origin",
+        "source",
+        "category",
+        "relatedCategory",
+        "phase",
+        "drill",
+        "test",
+        "title",
+        "instructions",
+        "areas",
+        "timestamps",
+        "classification"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "id": { "type": "string", "minLength": 1 },
+        "origin": { "type": "string", "enum": ["upstream", "mock"] },
+        "source": {
+          "type": "string",
+          "enum": ["live", "history"],
+          "description": "Which upstream shape the record was parsed as. live is alerts.json (field cat). history is AlertsHistory.json (field category)."
+        },
+        "category": { "$ref": "#/$defs/category" },
+        "relatedCategory": {
+          "anyOf": [{ "$ref": "#/$defs/category" }, { "type": "null" }],
+          "description": "Threat hinted by a pre-alert, all-clear title, or drill code."
+        },
+        "phase": { "$ref": "#/$defs/messagePhase" },
+        "drill": { "type": "boolean" },
+        "test": { "type": "boolean" },
+        "title": { "$ref": "#/$defs/localized" },
+        "instructions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["he", "en"],
+          "properties": {
+            "he": { "type": ["string", "null"] },
+            "en": { "type": ["string", "null"] }
+          }
+        },
+        "areas": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/areaRef" }
+        },
+        "timestamps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["observedAt", "alertTime", "sourceTimezone"],
+          "properties": {
+            "observedAt": { "type": "string", "minLength": 20 },
+            "alertTime": {
+              "type": ["string", "null"],
+              "description": "UTC instant converted from an Asia/Jerusalem wall clock. Null when the upstream record had no alertDate."
+            },
+            "sourceTimezone": { "anyOf": [{ "const": "Asia/Jerusalem" }, { "type": "null" }] }
+          }
+        },
+        "classification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["basis", "namespace", "sourceCat", "disputed"],
+          "properties": {
+            "basis": {
+              "type": "string",
+              "enum": ["title", "live-cat", "history-category", "title-and-code"]
+            },
+            "namespace": { "type": "string", "enum": ["live", "history"] },
+            "sourceCat": { "type": ["string", "null"] },
+            "disputed": {
+              "type": "boolean",
+              "description": "True when maintained Oref clients disagree on this numeric code, or the title contradicted the code."
+            }
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "areaId",
+        "rawName",
+        "names",
+        "phase",
+        "category",
+        "threatCategory",
+        "drill",
+        "sounding",
+        "alertId",
+        "since",
+        "updatedAt",
+        "district"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "areaId": { "type": "string" },
+        "rawName": { "type": "string" },
+        "names": { "$ref": "#/$defs/localized" },
+        "phase": { "$ref": "#/$defs/lifecyclePhase" },
+        "category": { "anyOf": [{ "$ref": "#/$defs/category" }, { "type": "null" }] },
+        "threatCategory": { "anyOf": [{ "$ref": "#/$defs/category" }, { "type": "null" }] },
+        "drill": { "type": "boolean" },
+        "sounding": {
+          "type": "boolean",
+          "description": "True only while the area is present on the latest successful live snapshot. An empty live body clears sounding and does not by itself end the lifecycle."
+        },
+        "alertId": { "type": ["string", "null"] },
+        "since": { "type": ["string", "null"] },
+        "updatedAt": { "type": ["string", "null"] },
+        "district": { "anyOf": [{ "$ref": "#/$defs/districtRef" }, { "type": "null" }] }
+      }
+    },
+    "webhookEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "event", "sentAt", "alert", "changes"],
+      "properties": {
+        "schemaVersion": { "const": "1.0.0" },
+        "event": { "type": "string", "enum": ["alert.created", "lifecycle.updated"] },
+        "sentAt": { "type": "string" },
+        "alert": { "anyOf": [{ "$ref": "#/$defs/alert" }, { "type": "null" }] },
+        "changes": { "type": "array", "items": { "$ref": "#/$defs/lifecycle" } }
+      }
+    },
+    "catalogDistrict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "names", "englishVariants"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^district:" },
+        "names": { "$ref": "#/$defs/localized" },
+        "englishVariants": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "catalogArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sourceId", "alertName", "names", "districtId", "shelterTimeSeconds", "location"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^city:" },
+        "sourceId": { "type": "integer" },
+        "alertName": { "type": "string", "minLength": 1 },
+        "names": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["he", "en", "ru", "ar"],
+          "properties": {
+            "he": { "type": "string", "minLength": 1 },
+            "en": { "type": "string", "minLength": 1 },
+            "ru": { "type": ["string", "null"] },
+            "ar": { "type": ["string", "null"] }
+          }
+        },
+        "districtId": { "type": ["string", "null"] },
+        "shelterTimeSeconds": { "type": "integer", "minimum": 0 },
+        "location": { "$ref": "#/$defs/point" }
+      }
+    }
+  }
+}

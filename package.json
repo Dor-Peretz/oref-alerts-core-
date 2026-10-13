@@ -1,0 +1,46 @@
+{
+  "name": "oref-alerts-core",
+  "version": "1.0.0",
+  "description": "Normalized, versioned data layer for Pikud HaOref (Home Front Command) alerts",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "oref-alerts": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "data/areas.json",
+    "data/fixtures",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "tsc -p tsconfig.test.json && node --test \"dist-test/test/**/*.test.js\"",
+    "start": "node dist/cli.js",
+    "start:mock": "OREF_MODE=mock node dist/cli.js",
+    "areas": "python3 scripts/build-areas.py"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "undici": "^7.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}

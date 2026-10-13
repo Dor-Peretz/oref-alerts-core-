@@ -1,0 +1,16 @@
+oref-alerts-core
+Copyright (c) 2026 Dor-Peretz
+
+This project is not affiliated with Pikud HaOref (פיקוד העורף) or the
+Israel Defense Forces. The alert feeds it polls are unofficial.
+
+Area catalog
+------------
+data/areas.json is derived from cities.json in
+https://github.com/eladnava/pikud-haoref-api (commit e40da77a4aab3052fb1a4a56402ae2e26c3e3cf3),
+Copyright Elad Nava, licensed under the Apache License, Version 2.0.
+A copy of that license is in licenses/Apache-2.0.txt.
+
+That upstream file is a processed cache of Pikud HaOref district and segment
+data. Numeric city ids are preserved from it. District ids (district:*) are
+assigned by oref-alerts-core and are not official Oref identifiers.
